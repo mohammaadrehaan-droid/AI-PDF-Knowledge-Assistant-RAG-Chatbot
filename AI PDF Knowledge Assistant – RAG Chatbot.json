@@ -1,0 +1,229 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "71e24e51-f032-40a9-a21b-2d67b840ebc8",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "bb16430f-1559-40ba-994c-4ddc1414adf1",
+      "name": "Webhook",
+      "webhookId": "71e24e51-f032-40a9-a21b-2d67b840ebc8"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "316b79cb-e339-4517-bbae-2abea02f156c",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "vector_store_key"
+        },
+        "embeddingBatchSize": 500
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "e441a011-c544-4270-b7b3-1ac32f5f84f5",
+      "name": "Simple Vector Store"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        368,
+        176
+      ],
+      "id": "991444e2-5a8a-43d2-ab0f-0895f791b59e",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "5eY9W3QGZxzAkAPj",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        528,
+        176
+      ],
+      "id": "b9547d42-5ae7-4b00-aac0-8a738a2ad1dc",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1184,
+        0
+      ],
+      "id": "b9d5a13d-f12c-4baf-83e7-3527ee80dfcc",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "You are a Document-Based AI Assistant.\n\nYour job is to answer the user's questions using only the information available in the uploaded file.\n\nInstructions:\n1. Always search and read the uploaded file before answering.\n2. Understand the user's question and find the relevant information in the file.\n3. Give a clear, accurate, and simple answer based on the file's content.\n4. Do not use outside knowledge or make up information.\n5. If the answer is not available in the uploaded file, clearly say: \"Sorry, I could not find the answer in the uploaded file.\"\n6. If the user asks a question in English, answer in English. If the user asks in Urdu or Roman Urdu, answer in the same language.\n7. Keep answers relevant and avoid unnecessary details.\n8. If the file contains multiple relevant points, organize them into a clear list.\n\nImportant: The uploaded file is your primary source of information. Never guess an answer.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        816,
+        0
+      ],
+      "id": "4d56086e-4e92-4ed1-bd82-3b791b7ad0ec",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama3:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        688,
+        208
+      ],
+      "id": "208afc05-2286-495d-b670-467fe7a927e0",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "GeI6Jcveuod2AlWQ",
+          "name": "Ollama account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Vector Store": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "7659fb87-e3f0-4e6a-a71a-b13de2c8bfb4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ac6f8e6b9fb8b02b373a8e2269fbd65465e010bb2de579aebe339c641e88ca99"
+  },
+  "nodeGroups": [],
+  "id": "bdCPZeeaisVQ6Inp",
+  "tags": []
+}
